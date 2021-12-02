@@ -188,6 +188,7 @@ ucna$week_num <- NULL
 install.packages("CORElearn") 
 library(CORElearn)
 
+#KLASIFIKACIJSKO OCENJEVANJE
 # INFGAIN pred dodanimi atributi
 sort(attrEval(poraba ~ datum + regija + stavba + namembnost + povrsina + leto_izgradnje + temp_zraka + temp_rosisca + oblacnost + padavine + pritisk + smer_vetra + hitrost_vetra, ucna, "InfGain"), decreasing = T)
 
@@ -212,12 +213,85 @@ sort(attrEval(poraba ~ datum + regija + stavba + namembnost + povrsina + leto_iz
 # RELIEFF po dodanih atributih
 sort(attrEval(poraba ~ ., ucna, "ReliefFequalK"), decreasing = TRUE)
 
+#REGRESIJSKO OCENJEVANJE
+
+#normalizaija
+
+min_max_norm <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+ucna_norm <- as.data.frame(lapply(ucna, min_max_norm))
+
+#MSEifMean
+sort(attrEval(poraba ~ ., ucna, "MSEofMean"), decreasing = TRUE)
+#RReliefFexpRank
+sort(attrEval(poraba ~ ., ucna, "RReliefFexpRank"), decreasing = TRUE)
 
 
 
+## 3.NAL 
+CA <- function(observed, predicted)
+{
+  mean(observed == predicted)
+}
+
+brier.score <- function(observedMatrix, predictedMatrix)
+{
+  sum((observedMatrix - predictedMatrix) ^ 2) / nrow(predictedMatrix)
+}
+
+observed == testna$namembnost
+obsMat <- class.ind(testna$namembnost)
+#
+#
+# NAIVNI BAYESOV KLASIFIKATOR
+#
+#
+library(CORElearn)
+nb <- CoreModel(namembnost ~ ., data = ucna, model="bayes")
+predicted <- predict(nb, teststna, type="class")
+CA(observed, predicted)
+
+predMat <- predict(nb, teststna, type = "prob")
+brier.score(obsMat, predMat)
 
 
+#
+#
+# ODLOCITVENO DREVO
+#
+#
+library(CORElearn)
+dt <- CoreModel(namembnost ~ ., data = ucna, model="tree")
+predicted <- predict(dt, teststna, type="class")
+CA(observed, predicted)
+
+predMat <- predict(dt, teststna, type = "prob")
+brier.score(obsMat, predMat)
+
+#
+#
+# SVM
+#
+#
+library(e1071)
+
+sm <- svm(position ~ ., data = train)
+predicted <- predict(sm, test, type="class")
+CA(observed, predicted)
+
+sm <- svm(position ~ ., train, probability = T)
+pred <- predict(sm, test, probability = T)
+predMat <- attr(pred, "probabilities")
+
+colnames(obsMat)
+colnames(predMat)
+
+predMat <- predMat[,colnames(obsMat)]
+
+brier.score(obsMat, predMat)
 
 
-
+#wrapper
 
