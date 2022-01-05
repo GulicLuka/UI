@@ -43,7 +43,9 @@ public class Naloga {
 
             switch(stAlg - 1){
                 case 0:
+                    //drawOut(grid);
                     BFS.setup(grid);
+                    
                     break;
                 case 1:
                     DFS.setup(grid);

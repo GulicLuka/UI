@@ -4,15 +4,16 @@ class BFS{
      
     private static int ROW;
     private static int COL;
-    private static int stZaklad;
+    private static int stZakladov = 0;
     private static boolean najden_zaklad = false;
-    private static boolean najden_cilj = false;
-    private static final String[] listSmeriNeba = {"ENWS", "NEWS", "WENS", "EWNS", "NWES", "WNES", "SNEW", "NSEW", "ESNW", "SENW", "NESW", "ENSW", "EWSN", "WESN", "SEWN", "ESWN", "WSEN", "SWEN", "SWNE", "WSNE", "NSWE", "SNWE", "WNSE", "NWSE"};
+    private static boolean[][] allVisited; 
     private static HashMap<String, Integer> PathValue = new HashMap<>();
-    private static HashMap<String, String> PathSmer = new HashMap<>();
     private static HashMap<String, Integer> PathMoves = new HashMap<>();
     private static HashMap<String, boolean[][]> PathVisited = new HashMap<>();
     private static ArrayList<int[]> obiskani_zakladi = new ArrayList<>();
+    static int dRow[] = { -1, 0, 1, 0 };
+    static int dCol[] = { 0, 1, 0, -1 };
+
 
     private static class pair {
         public int first;
@@ -35,106 +36,86 @@ class BFS{
     }
 
 
-    private static void BFSsearch(int row, int col, int[][] grid, boolean[][] vis, String smer) {
-        System.out.println(smer);
-        int stZakladov = 0;
+    private static void BFSsearch(int row, int col, int[][] grid, boolean[][] vis) {
         int cena = 0;
         int premik = 0;
+        int id = 1;
+        najden_zaklad = false;
         StringBuilder sb = new StringBuilder();
 
         Queue<pair> queue = new LinkedList<>();
         queue.add(new pair(row, col));
+        vis[row][col] = true;
 
         while (!queue.isEmpty()) {
 
-            pair curr = queue.remove();
+            pair curr = queue.remove();;
+
             row = curr.first;
             col = curr.second;
-
-            int[] a = {row, col};
-            if(grid[row][col] == -3 && !obiskani_zakladi.contains(a)){
-                obiskani_zakladi.add(a);
+            
+            if(grid[row][col] >= 0 || grid[row][col] == -2){
+                cena += grid[row][col];
+                vis[row][col] = true;
+                allVisited[row][col] = true;
             }
 
-            if(obiskani_zakladi.size() == stZaklad)
-                najden_zaklad = true;
+            int[] a = {row,col};
+            if(grid[row][col] == -3 && !najden_zaklad){
+                boolean notIn = true;
+                for(int[] arr : obiskani_zakladi){
+                    if(arr[0] == a[0] && arr[1] == a[1]){
+                        notIn = false;
+                        break;
+                    }
+                }
+                if(notIn){
+                    System.out.println("No. " + id + ": Position: [" + row + ", " + col + "]");
+                    obiskani_zakladi.add(a);
+                    vis = new boolean[grid.length][grid[0].length];
+                    id++;
+                    
+                    if(obiskani_zakladi.size() == stZakladov){
+                        System.out.println("Najdeni so vsi zakladi");
+                        najden_zaklad = true;
+                    }
+                }
+            }
 
             premik++;
 
-            if(najden_cilj && najden_zaklad){
+            if(najden_zaklad && grid[row][col] == -4){
+                System.out.println("No. " + id + ": Position: [" + row + ", " + col + "] CILJ");
+                sb.append(row).append(":").append(col);
                 PathValue.put(String.valueOf(sb), cena);
-                PathSmer.put(String.valueOf(sb), smer);
                 PathMoves.put(String.valueOf(sb), premik);
                 PathVisited.put(String.valueOf(sb), vis);
                 queue.clear();
                 return;
             }
 
-            if(grid[row][col] == -4){
-                sb.append(row).append(":").append(col);
-                najden_cilj = true;
-                if(najden_zaklad) {
-                    PathValue.put(String.valueOf(sb), cena);
-                    PathSmer.put(String.valueOf(sb), smer);
-                    PathMoves.put(String.valueOf(sb), premik);
-                    PathVisited.put(String.valueOf(sb), vis);
-                }
-                queue.clear();
-                break;
-            }
-
-            if(grid[row][col] >= 0 || grid[row][col] == -2){
-                cena += grid[row][col];
-                vis[row][col] = true;
-            }
-
             sb.append(row).append(":").append(col).append(" -> ");
 
-            char[] chars = smer.toCharArray();
-            int adjx = 0, adjy = 0;
-            for (char ch: chars) {
-                if(ch == 'E'){
-                    adjx = row;
-                    adjy = col + 1;
-                }else if(ch == 'W'){
-                    adjx = row;
-                    adjy = col - 1;
-                }else if(ch == 'S'){
-                    adjx = row+1;
-                    adjy = col;
-                }else if(ch == 'N'){
-                    adjx = row - 1;
-                    adjy = col;
-                }
-
-                if (isValid(grid, vis, adjx, adjy))
-                {
+            for(int i = 0; i < 4; i++)
+            {
+                int adjx = row + dRow[i];
+                int adjy = col + dCol[i];
+     
+                if (isValid(grid, vis, adjx, adjy)) {
                     queue.add(new pair(adjx, adjy));
                     vis[adjx][adjy] = true;
+                    allVisited[adjx][adjy] = true;
                 }
+            }
+
+            if(queue.isEmpty()){
+                System.out.println("Prazn QUEUE");
             }
         }
         System.out.println(sb.toString());
     }
 
-    private static String getString(HashMap<String, String> pathSmer1, HashMap<String, Integer> pathMoves1, int minPremik, Map.Entry<String, Integer> entry) {
-        String bestSmer;
-        System.out.println("MIN: " +entry.getKey());
-        bestSmer = pathSmer1.get(entry.getKey());
-        System.out.println("Najboljsa smer: " + pathSmer1.get(entry.getKey()));
-        System.out.println("Cena poti: " + entry.getValue());
-        System.out.println("Stevilo premikov: " + pathMoves1.get(entry.getKey()));
-        System.out.println("Minimalno stevilo premikov: " + minPremik);
-        return bestSmer;
-    }
-
     public static void setup(int[][] grid) {
-        PathValue = new HashMap<>();
-        PathSmer = new HashMap<>();
-        PathMoves = new HashMap<>();
-        obiskani_zakladi = new ArrayList<>();
-        najden_zaklad = false;
-        stZaklad = 0;
         boolean najden = false;
         int[] start= new int[2];
         for(int i = 0; i< grid.length; i++){
@@ -144,57 +125,17 @@ class BFS{
                     start[1] = j;
                     najden = true;
                 }else if(grid[i][j] == -3){
-                    stZaklad++;
+                    stZakladov++;
                 }
             }
         }
         ROW = grid.length;
         COL = grid[0].length;
         boolean[][] vis;
-        String bestSmer = "";
-        for(String smerNeba: listSmeriNeba){
-            obiskani_zakladi = new ArrayList<>();
-            najden_zaklad = false;
-            najden_cilj = false;
-            vis = new boolean[ROW][COL];
-            BFSsearch(start[0], start[1], grid, vis, smerNeba);
-        }
-        HashMap<String, Integer> PathValue1 = new HashMap<>();
-        HashMap<String, String> PathSmer1 = new HashMap<>();
-        HashMap<String, Integer> PathMoves1 = new HashMap<>();
-
-        System.out.println("BFS");
-        System.out.println("Row:Col -> Row:Col -> ...");
-        System.out.println();
-
-        if(PathValue.size() < 1){
-            System.out.println("Ni poti");
-            return;
-        }
-        int min = Collections.min(PathValue.values());
-        int minPremik = Collections.min(PathMoves.values());
-        for (Map.Entry<String, Integer> entry : PathValue.entrySet()) {
-            if(entry.getValue() == min) {
-                PathSmer1.put(entry.getKey(), PathSmer.get(entry.getKey()));
-                PathValue1.put(entry.getKey(), entry.getValue());
-                PathMoves1.put(entry.getKey(), PathMoves.get(entry.getKey()));
-            }
-            System.out.println();
-            System.out.println(entry.getKey() + ", Path cost = " + entry.getValue() + ", Moves = " + PathMoves.get(entry.getKey()));
-        }
-        System.out.println();
-
-        int minPremik1 = Collections.min(PathMoves1.values());
-        for (Map.Entry<String, Integer> entry : PathMoves1.entrySet()) {
-            if(entry.getValue() == minPremik1)
-                bestSmer = getString(PathSmer1, PathMoves1, minPremik, entry);
-        }
         vis = new boolean[ROW][COL];
-        obiskani_zakladi = new ArrayList<>();
-        najden_zaklad = false;
-        najden_cilj = false;
-        BFSsearch(start[0], start[1], grid, vis,bestSmer);
-        Naloga.drawOutPath(grid, vis);
+        allVisited = new boolean[ROW][COL];
+        BFSsearch(start[0], start[1], grid, vis);
+        Naloga.drawOutPath(grid, allVisited);
     }
 
 }
