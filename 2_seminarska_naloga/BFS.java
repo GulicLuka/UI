@@ -4,13 +4,15 @@ class BFS{
      
     private static int ROW;
     private static int COL;
+    private static int cenaAllChecked = 0;
+    private static int premikiAllChecked = 0;
+    private static int cenaOptimalChecked = 0;
+    private static int premikiOptimalChecked = 0;
     private static int stZakladov = 0;
     private static boolean najden_zaklad = false;
     private static boolean[][] allVisited; 
-    private static HashMap<String, Integer> PathValue = new HashMap<>();
-    private static HashMap<String, Integer> PathMoves = new HashMap<>();
-    private static HashMap<String, boolean[][]> PathVisited = new HashMap<>();
     private static ArrayList<int[]> obiskani_zakladi = new ArrayList<>();
+    private static ArrayList<pair> backtracking = new ArrayList<>();
     static int dRow[] = { -1, 0, 1, 0 };
     static int dCol[] = { 0, 1, 0, -1 };
 
@@ -18,10 +20,30 @@ class BFS{
     private static class pair {
         public int first;
         public int second;
+        public int[] parent;
+        public boolean end;
 
-        public pair(int first, int second) {
+        public pair(int first, int second, int[] parent, boolean end) {
             this.first = first;
             this.second = second;
+            this.parent = parent;
+            this.end = end;
+        }
+
+        public boolean getEnd(){
+            return this.end;
+        }
+
+        public int getFirst(){
+            return this.first;
+        }
+
+        public int getSecond(){
+            return this.second;
+        }
+
+        public int[] getParent(){
+            return this.parent;
         }
     }
 
@@ -37,14 +59,13 @@ class BFS{
 
 
     private static void BFSsearch(int row, int col, int[][] grid, boolean[][] vis) {
-        int cena = 0;
-        int premik = 0;
         int id = 1;
         najden_zaklad = false;
-        StringBuilder sb = new StringBuilder();
 
         Queue<pair> queue = new LinkedList<>();
-        queue.add(new pair(row, col));
+        int[] start = {row, col};
+        queue.add(new pair(row, col, start, false));
+        backtracking.add(new pair(row, col, start, false));
         vis[row][col] = true;
 
         while (!queue.isEmpty()) {
@@ -55,7 +76,9 @@ class BFS{
             col = curr.second;
             
             if(grid[row][col] >= 0 || grid[row][col] == -2){
-                cena += grid[row][col];
+                if(grid[row][col] >= 0){
+                    cenaAllChecked += grid[row][col];
+                }
                 vis[row][col] = true;
                 allVisited[row][col] = true;
             }
@@ -73,6 +96,7 @@ class BFS{
                     System.out.println("No. " + id + ": Position: [" + row + ", " + col + "]");
                     obiskani_zakladi.add(a);
                     vis = new boolean[grid.length][grid[0].length];
+                    queue.clear();
                     id++;
                     
                     if(obiskani_zakladi.size() == stZakladov){
@@ -82,19 +106,13 @@ class BFS{
                 }
             }
 
-            premik++;
+            premikiAllChecked++;
 
             if(najden_zaklad && grid[row][col] == -4){
                 System.out.println("No. " + id + ": Position: [" + row + ", " + col + "] CILJ");
-                sb.append(row).append(":").append(col);
-                PathValue.put(String.valueOf(sb), cena);
-                PathMoves.put(String.valueOf(sb), premik);
-                PathVisited.put(String.valueOf(sb), vis);
                 queue.clear();
                 return;
             }
-
-            sb.append(row).append(":").append(col).append(" -> ");
 
             for(int i = 0; i < 4; i++)
             {
@@ -102,7 +120,14 @@ class BFS{
                 int adjy = col + dCol[i];
      
                 if (isValid(grid, vis, adjx, adjy)) {
-                    queue.add(new pair(adjx, adjy));
+                    int[] parent = {row, col};
+                    if(najden_zaklad && grid[adjx][adjy] == -4){
+                        queue.add(new pair(adjx, adjy, parent, true));
+                        backtracking.add(new pair(adjx, adjy, parent, true));
+                    } else{
+                        queue.add(new pair(adjx, adjy, parent, false));
+                        backtracking.add(new pair(adjx, adjy, parent, false));
+                    }
                     vis[adjx][adjy] = true;
                     allVisited[adjx][adjy] = true;
                 }
@@ -112,8 +137,47 @@ class BFS{
                 System.out.println("Prazn QUEUE");
             }
         }
-        System.out.println(sb.toString());
     }
+
+    public static boolean[][] findOptimalPath(int[][] grid){
+        //find end
+        int indexOfFinish = backtracking.size()-1;
+        for(int i=backtracking.size()-1; i >= 0; i--){
+            pair curr = backtracking.get(i);
+            if(curr.getEnd()){
+                indexOfFinish = i;
+                break;
+            }
+        }
+
+        //find optimal path
+        boolean[][] optimalPath = new boolean[ROW][COL];
+        for(int i=indexOfFinish; i >= 0; i--){
+            pair current = backtracking.get(i);
+            int currX = current.getFirst();
+            int currY = current.getSecond();
+            int[] parentOfCurrent = current.getParent();
+            if(parentOfCurrent[0] == currX && parentOfCurrent[1] == currY){
+                optimalPath[currX][currY] = true;
+                return optimalPath;
+            }
+            for(int j=i-1; j >= 0; j--){
+                pair next = backtracking.get(j);
+                if(parentOfCurrent[0] == next.getFirst() && parentOfCurrent[1] == next.getSecond()){
+                    optimalPath[next.getFirst()][next.getSecond()] = true;
+                    premikiOptimalChecked++;
+                    if(grid[next.getFirst()][next.getSecond()] >= 0)
+                        cenaOptimalChecked += grid[next.getFirst()][next.getSecond()];
+                    i = j+1;
+                    break;
+                }
+            }
+        }
+        return optimalPath;
+    }
+
+
+
 
     public static void setup(int[][] grid) {
         boolean najden = false;
@@ -135,7 +199,11 @@ class BFS{
         vis = new boolean[ROW][COL];
         allVisited = new boolean[ROW][COL];
         BFSsearch(start[0], start[1], grid, vis);
-        Naloga.drawOutPath(grid, allVisited);
+        boolean[][] optimal = findOptimalPath(grid);
+        System.out.println("Cena vseh obiskanih vozlisc: " + cenaAllChecked);
+        System.out.println("Stevilo vseh premikov: " + premikiAllChecked);
+        System.out.println("Cena optimalne poti: " + cenaOptimalChecked);
+        System.out.println("Stevilo premikov za optimalo pot: " + premikiOptimalChecked);
+        Naloga.drawOutPath(grid, allVisited, optimal);
     }
-
 }
