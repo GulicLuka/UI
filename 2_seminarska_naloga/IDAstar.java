@@ -67,7 +67,8 @@ class IDAstar {
         int stObiskanih = 0;
         while(true){
             allVisited[row][col] = true;
-            int[] temp = search(row, col, 0, meja, grid);
+            int[] parent = {row, col};
+            int[] temp = search(row, col, parent, 0, meja, grid);
             if(obiskani_zakladi.size() > 0){
                 for(int[] currZaklad : obiskani_zakladi){
                     if(temp[0] == currZaklad[0] && temp[1] == currZaklad[1]){
@@ -115,33 +116,38 @@ class IDAstar {
             if(temp[2] >= Integer.MAX_VALUE){
                 return;
             }
+            backtracking = new ArrayList<>();
             allVisited = new boolean[ROW][COL];
             meja = temp[2];
         }
     }
 
-    private static int[] search(int row, int col, int g, int meja, int[][] grid){
+    private static int[] search(int row, int col, int[] parent, int g, int meja, int[][] grid){
         int f = g + minHevristika(row, col); // skupna = costDoN + hevristika
         if(f > meja){
             int[] niNajdbe = {row, col, f};
             return niNajdbe;
         }
         if(row == CILJ[0] && col == CILJ[1] && najden_zaklad){
+            backtracking.add(new pair(row, col, parent, true));
             int[] najden = {row, col, f};
             return najden;
-        }
-
+        } 
+        
         for(int[] z : obiskani_zakladi){
             if(row == z[0] && col == z[1]){
+                backtracking.add(new pair(row, col, parent, true));
                 int[] najdenZaklad = {row, col, f};
                 return najdenZaklad;
             }
         }
-
+        
+        backtracking.add(new pair(row, col, parent, false));
+        
+        int[] currParent = {row, col};
         int[] najmanj = {row, col, Integer.MAX_VALUE};
         for(int[] next : nextNodes(row, col, grid)){
-
-            int[] temp = search(next[0], next[1], g + grid[next[0]][next[1]], meja, grid);
+            int[] temp = search(next[0], next[1],currParent , g + grid[next[0]][next[1]], meja, grid);
 
             for(int[] z : obiskani_zakladi){
                 if(temp[0] == z[0] && temp[1] == z[1]){
