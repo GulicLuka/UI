@@ -3,7 +3,7 @@ import java.util.HashMap;
 
 import javax.management.relation.Role;
 
-class IDAstar {
+class IDAstarIzboljsava {
     private static int ROW;
     private static int COL;
     private static int D;
@@ -14,7 +14,7 @@ class IDAstar {
     private static int premikiOptimalChecked = 0;
     private static int stZakladov = 0;
     private static boolean najden_zaklad = false;
-    private static boolean[][] allVisited; 
+    //private static boolean[][] allVisited; 
     private static boolean[][] isVisited;
     private static ArrayList<int[]> obiskani_zakladi = new ArrayList<>();
     private static ArrayList<pair> backtracking = new ArrayList<>();
@@ -52,14 +52,18 @@ class IDAstar {
         }
     }
 
-    private static Boolean isValid(int[][] grid, int row, int col) {
+    private static Boolean isValid(int[][] grid, int row, int col, int[] parent) {
         if (row < 0 || col < 0 || row >= ROW || col >= COL)
             return false;
 
         if(grid[row][col] == -1)
             return false;
 
-        return !allVisited[row][col];
+        if(row == parent[0] && col == parent[1])
+            return false;
+        else
+            return true;
+        //return !allVisited[row][col];
     }
 
     private static void IDAstar(int row, int col, int[][] grid) {
@@ -67,7 +71,7 @@ class IDAstar {
         int init_meja = meja;
         int stObiskanih = 0;
         while(true){
-            allVisited[row][col] = true;
+            //allVisited[row][col] = true;
             isVisited[row][col] = true;
             int[] parent = {row, col};
             int[] temp = search(row, col, parent, 0, meja, grid);
@@ -77,7 +81,7 @@ class IDAstar {
                         System.out.println("Najden zaklad:" + currZaklad[0] + ":" + currZaklad[1]);
                         listPoti.add(findOptimalPath(grid));
                         backtracking = new ArrayList<>();
-                        allVisited = new boolean[ROW][COL];
+                        //allVisited = new boolean[ROW][COL];
                         meja = init_meja;
                         stObiskanih++;
 
@@ -119,7 +123,7 @@ class IDAstar {
                 return;
             }
             backtracking = new ArrayList<>();
-            allVisited = new boolean[ROW][COL];
+            //allVisited = new boolean[ROW][COL];
             meja = temp[2];
         }
     }
@@ -151,7 +155,7 @@ class IDAstar {
         
         int[] currParent = {row, col};
         int[] najmanj = {row, col, Integer.MAX_VALUE};
-        for(int[] next : nextNodes(row, col, grid)){
+        for(int[] next : nextNodes(row, col, grid, parent)){
             int[] temp = search(next[0], next[1],currParent , g + grid[next[0]][next[1]], meja, grid);
 
             for(int[] z : obiskani_zakladi){
@@ -174,17 +178,17 @@ class IDAstar {
         return najmanj;
     }
 
-    private static ArrayList<int[]> nextNodes(int row, int col, int[][] grid){
+    private static ArrayList<int[]> nextNodes(int row, int col, int[][] grid, int[] parent){
         ArrayList<int[]> nextNodesList = new ArrayList<>();
         for(int i = 0; i < 4; i++) {
             int adjx = row + dRow[i];
             int adjy = col + dCol[i];
  
-            if (isValid(grid, adjx, adjy)) {
+            if (isValid(grid, adjx, adjy, parent)) {
                 int[] next = {adjx,adjy};
                 nextNodesList.add(next);
                 isVisited[adjx][adjy] = true;
-                allVisited[adjx][adjy] = true;
+                //allVisited[adjx][adjy] = true;
             }
         }
         return nextNodesList;
@@ -297,7 +301,7 @@ class IDAstar {
         ROW = grid.length;
         COL = grid[0].length;
         isVisited = new boolean[ROW][COL];
-        allVisited = new boolean[ROW][COL];
+        //allVisited = new boolean[ROW][COL];
         IDAstar(start[0], start[1], grid);
         boolean[][] optimal = getPath();
         System.out.println("Cena vseh obiskanih vozlisc: " + cenaAllChecked);

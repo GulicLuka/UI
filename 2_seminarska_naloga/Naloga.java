@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 public class Naloga {
     public static void main(String[] args) throws FileNotFoundException{
-        String[] algoritmi = {"BFS", "DFS", "IDA*"};
+        String[] algoritmi = {"BFS", "IDA*", "IDA* - izboljsan"};
         String[] labirinti = {"labyrinth_1", "labyrinth_2", "labyrinth_3", "labyrinth_4", "labyrinth_5", "labyrinth_6", "labyrinth_7", "labyrinth_8", "labyrinth_9"};
         Scanner sc  = new Scanner(System.in);
         do{
@@ -35,23 +35,16 @@ public class Naloga {
 
             String file = labirinti[stlab - 1] + ".txt";
             int[][] grid = readFile(file);
-            /*boolean[][] visited = new boolean[grid.length][grid[0].length];
-            for(int i=0; i < visited.length; i++){
-                Arrays.fill(visited[i], Boolean.FALSE);
-            }*/
-            
 
             switch(stAlg - 1){
                 case 0:
-                    //drawOut(grid);
-                    BFS.setup(grid);
-                    
+                    BFS.setup(grid); 
                     break;
                 case 1:
-                    DFS.setup(grid);
+                    IDAstar.setup(grid);
                     break;
                 case 2:
-                    IDAstar.setup(grid);
+                    IDAstarIzboljsava.setup(grid);
                     break;
                 default: System.out.println("Napacna vnesena steilka za izbiro algoritma: " + stAlg);
 
@@ -140,7 +133,7 @@ public class Naloga {
                     StdDraw.setPenColor(Color.BLUE);
                 }
                 if(field[i][j] >= 0 && optimal[i][j]){
-                    StdDraw.setPenColor(Color.LIGHT_GRAY);
+                    StdDraw.setPenColor(Color.GRAY);
                 }
                 StdDraw.filledSquare((double) j / (field.length - 1), 1- (double) i / (field.length -1), (double) 1 / (field.length - 1) * 0.5);
                 StdDraw.setPenColor(Color.BLACK);
